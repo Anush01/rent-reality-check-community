@@ -206,11 +206,15 @@ const Index = () => {
           <div className="max-w-2xl mx-auto relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
-              placeholder="Search questions, topics, or tags..."
+              placeholder="Search coming soon..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 py-3 text-lg border-2 focus:border-blue-500 transition-colors"
+              disabled
+              className="pl-10 py-3 text-lg border-2 focus:border-blue-500 transition-colors opacity-60 cursor-not-allowed"
             />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Lock className="w-4 h-4 text-gray-400" />
+            </div>
           </div>
         </div>
 
