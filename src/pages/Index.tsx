@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Users, MessageSquare, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, Users, MessageSquare, CheckCircle, AlertCircle, ThumbsUp } from "lucide-react";
 
 interface Question {
   id: string;
   category: 'tenant-to-landlord' | 'landlord-to-tenant';
   question: string;
-  expectedResponse: string;
+  expectedResponses: {
+    response: string;
+    votes: number;
+  }[];
   actualResponses: {
     response: string;
     outcome: 'positive' | 'negative' | 'neutral';
@@ -29,7 +32,20 @@ const sampleQuestions: Question[] = [
     id: '1',
     category: 'tenant-to-landlord',
     question: 'What is your policy on repairs and maintenance response times?',
-    expectedResponse: 'Emergency repairs within 24 hours, urgent repairs within 3-5 days, non-urgent repairs within 2 weeks. I provide a written maintenance policy.',
+    expectedResponses: [
+      {
+        response: 'Emergency repairs within 24 hours, urgent repairs within 3-5 days, non-urgent repairs within 2 weeks. I provide a written maintenance policy.',
+        votes: 89
+      },
+      {
+        response: 'I handle all repairs within 24-48 hours maximum and provide written documentation of my maintenance procedures.',
+        votes: 67
+      },
+      {
+        response: 'Emergency repairs same day, urgent within 72 hours, routine within one week. I maintain a list of trusted contractors.',
+        votes: 43
+      }
+    ],
     actualResponses: [
       {
         response: 'I handle everything within 24-48 hours max. Here\'s my maintenance policy document.',
@@ -54,7 +70,20 @@ const sampleQuestions: Question[] = [
     id: '2',
     category: 'landlord-to-tenant',
     question: 'How do you plan to care for the property and respect neighbors?',
-    expectedResponse: 'I keep my living space clean, follow noise guidelines especially during quiet hours, communicate proactively about any issues, and treat the property with respect.',
+    expectedResponses: [
+      {
+        response: 'I keep my living space clean, follow noise guidelines especially during quiet hours, communicate proactively about any issues, and treat the property with respect.',
+        votes: 78
+      },
+      {
+        response: 'I maintain the property as if it were my own, respect quiet hours (10pm-7am), and communicate any concerns immediately.',
+        votes: 56
+      },
+      {
+        response: 'I\'m very tidy, work from home so I\'m usually around, and I believe in being a good neighbor through clear communication.',
+        votes: 34
+      }
+    ],
     actualResponses: [
       {
         response: 'I\'m very clean and quiet. I work from home so I\'m usually around to keep an eye on things.',
@@ -79,7 +108,16 @@ const sampleQuestions: Question[] = [
     id: '3',
     category: 'tenant-to-landlord',
     question: 'Can you provide references from previous tenants?',
-    expectedResponse: 'Yes, I can provide contact information for 2-3 previous tenants (with their permission) who can speak about their rental experience.',
+    expectedResponses: [
+      {
+        response: 'Yes, I can provide contact information for 2-3 previous tenants (with their permission) who can speak about their rental experience.',
+        votes: 92
+      },
+      {
+        response: 'Absolutely! I have references from recent tenants and I\'m transparent about my rental history.',
+        votes: 67
+      }
+    ],
     actualResponses: [
       {
         response: 'Absolutely! Here are three references from tenants who lived here in the past two years.',
@@ -101,6 +139,7 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'tenant-to-landlord' | 'landlord-to-tenant'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [expandedExpected, setExpandedExpected] = useState<{ [key: string]: boolean }>({});
   const [formData, setFormData] = useState({
     question: "",
     expectedResponse: "",
@@ -117,6 +156,13 @@ const Index = () => {
       expectedResponse: "",
       actualResponse: ""
     });
+  };
+
+  const toggleExpectedResponses = (questionId: string) => {
+    setExpandedExpected(prev => ({
+      ...prev,
+      [questionId]: !prev[questionId]
+    }));
   };
 
   const filteredQuestions = sampleQuestions.filter(q => {
@@ -284,15 +330,54 @@ const Index = () => {
               </CardHeader>
               
               <CardContent>
-                {/* Expected Response */}
+                {/* Expected Responses */}
                 <div className="mb-6">
-                  <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Expected Response
-                  </h4>
-                  <p className="text-gray-700 bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
-                    {question.expectedResponse}
-                  </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Expected Responses ({question.expectedResponses.length})
+                    </h4>
+                    {question.expectedResponses.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleExpectedResponses(question.id)}
+                        className="text-xs"
+                      >
+                        {expandedExpected[question.id] ? 'Show Less' : 'See All'}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {/* Always show the top expected response */}
+                    <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                      <div className="flex items-start justify-between">
+                        <p className="text-gray-700 flex-1">
+                          {question.expectedResponses[0].response}
+                        </p>
+                        <div className="flex items-center gap-1 ml-3 text-sm text-gray-600">
+                          <ThumbsUp className="w-4 h-4" />
+                          <span>{question.expectedResponses[0].votes}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Show additional expected responses when expanded */}
+                    {expandedExpected[question.id] && question.expectedResponses.slice(1).map((expectedResponse, idx) => (
+                      <div key={idx} className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                        <div className="flex items-start justify-between">
+                          <p className="text-gray-700 flex-1">
+                            {expectedResponse.response}
+                          </p>
+                          <div className="flex items-center gap-1 ml-3 text-sm text-gray-600">
+                            <ThumbsUp className="w-4 h-4" />
+                            <span>{expectedResponse.votes}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Actual Responses */}
