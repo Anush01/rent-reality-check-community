@@ -9,140 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, Users, MessageSquare, CheckCircle, AlertCircle, ThumbsUp, Lock, Plus } from "lucide-react";
-
-interface Question {
-  id: string;
-  category: 'tenant-to-landlord' | 'landlord-to-tenant';
-  question: string;
-  expectedResponses: {
-    response: string;
-    votes: number;
-  }[];
-  actualResponses: {
-    response: string;
-    outcome: 'positive' | 'negative' | 'neutral';
-    context?: string;
-    votes?: number;
-  }[];
-  tags: string[];
-  votes: number;
-}
-
-const sampleQuestions: Question[] = [
-  {
-    id: '1',
-    category: 'tenant-to-landlord',
-    question: 'What is your policy on repairs and maintenance response times?',
-    expectedResponses: [
-      {
-        response: 'Emergency repairs within 24 hours, urgent repairs within 3-5 days, non-urgent repairs within 2 weeks. I provide a written maintenance policy.',
-        votes: 89
-      },
-      {
-        response: 'I handle all repairs within 24-48 hours maximum and provide written documentation of my maintenance procedures.',
-        votes: 67
-      },
-      {
-        response: 'Emergency repairs same day, urgent within 72 hours, routine within one week. I maintain a list of trusted contractors.',
-        votes: 43
-      }
-    ],
-    actualResponses: [
-      {
-        response: 'I handle everything within 24-48 hours max. Here\'s my maintenance policy document.',
-        outcome: 'positive',
-        context: 'Landlord provided detailed policy, followed through consistently',
-        votes: 34
-      },
-      {
-        response: 'I get to it when I get to it. Don\'t be so demanding.',
-        outcome: 'negative',
-        context: 'Multiple maintenance issues took weeks to resolve',
-        votes: 12
-      },
-      {
-        response: 'Emergency repairs same day, others within a week usually.',
-        outcome: 'neutral',
-        context: 'Generally responsive but no formal policy',
-        votes: 23
-      }
-    ],
-    tags: ['maintenance', 'repairs', 'timeline'],
-    votes: 127
-  },
-  {
-    id: '2',
-    category: 'landlord-to-tenant',
-    question: 'How do you plan to care for the property and respect neighbors?',
-    expectedResponses: [
-      {
-        response: 'I keep my living space clean, follow noise guidelines especially during quiet hours, communicate proactively about any issues, and treat the property with respect.',
-        votes: 78
-      },
-      {
-        response: 'I maintain the property as if it were my own, respect quiet hours (10pm-7am), and communicate any concerns immediately.',
-        votes: 56
-      },
-      {
-        response: 'I\'m very tidy, work from home so I\'m usually around, and I believe in being a good neighbor through clear communication.',
-        votes: 34
-      }
-    ],
-    actualResponses: [
-      {
-        response: 'I\'m very clean and quiet. I work from home so I\'m usually around to keep an eye on things.',
-        outcome: 'positive',
-        context: 'Excellent tenant, no issues in 2 years',
-        votes: 45
-      },
-      {
-        response: 'I\'ll do whatever I want, it\'s my home while I pay rent.',
-        outcome: 'negative',
-        context: 'Multiple noise complaints, property damage',
-        votes: 8
-      },
-      {
-        response: 'I keep things tidy and try to be considerate of neighbors.',
-        outcome: 'neutral',
-        context: 'Generally good tenant with minor issues',
-        votes: 19
-      }
-    ],
-    tags: ['property-care', 'neighbors', 'respect'],
-    votes: 89
-  },
-  {
-    id: '3',
-    category: 'tenant-to-landlord',
-    question: 'Can you provide references from previous tenants?',
-    expectedResponses: [
-      {
-        response: 'Yes, I can provide contact information for 2-3 previous tenants (with their permission) who can speak about their rental experience.',
-        votes: 92
-      },
-      {
-        response: 'Absolutely! I have references from recent tenants and I\'m transparent about my rental history.',
-        votes: 67
-      }
-    ],
-    actualResponses: [
-      {
-        response: 'Absolutely! Here are three references from tenants who lived here in the past two years.',
-        outcome: 'positive',
-        context: 'All references were positive, landlord was transparent',
-        votes: 56
-      },
-      {
-        response: 'I don\'t give out personal information about my tenants.',
-        outcome: 'negative',
-        context: 'Red flag - wouldn\'t provide any references',
-        votes: 15
-      }
-    ],
-    tags: ['references', 'transparency', 'verification'],
-    votes: 156
-  }
-];
+import { useQuestions, useCreateQuestion, type QuestionWithResponses } from "@/hooks/useQuestions";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -156,10 +23,20 @@ const Index = () => {
     actualResponse: ""
   });
 
+  const { data: questions = [], isLoading, error } = useQuestions();
+  const createQuestion = useCreateQuestion();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted:", formData);
-    // Here you would typically send the data to your backend
+    
+    createQuestion.mutate({
+      question: formData.question,
+      expectedResponse: formData.expectedResponse,
+      actualResponse: formData.actualResponse || undefined,
+      category: 'tenant-to-landlord'
+    });
+    
     setIsDialogOpen(false);
     setFormData({
       question: "",
@@ -182,7 +59,7 @@ const Index = () => {
     }));
   };
 
-  const filteredQuestions = sampleQuestions.filter(q => {
+  const filteredQuestions = questions.filter(q => {
     const matchesSearch = q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          q.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'all' || q.category === selectedCategory;
@@ -210,6 +87,29 @@ const Index = () => {
         return 'border-l-yellow-500 bg-yellow-50';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">Error loading questions</h3>
+          <p className="text-gray-500">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -276,8 +176,12 @@ const Index = () => {
                     <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button type="submit" className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
-                      Submit Question
+                    <Button 
+                      type="submit" 
+                      className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+                      disabled={createQuestion.isPending}
+                    >
+                      {createQuestion.isPending ? 'Submitting...' : 'Submit Question'}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -386,33 +290,41 @@ const Index = () => {
                   </div>
                   
                   <div className="space-y-3">
-                    {/* Always show the top expected response */}
-                    <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
-                      <div className="flex items-start justify-between">
-                        <p className="text-gray-700 flex-1">
-                          {question.expectedResponses[0].response}
-                        </p>
-                        <div className="flex items-center gap-1 ml-3 text-sm text-gray-600">
-                          <ThumbsUp className="w-4 h-4" />
-                          <span>{question.expectedResponses[0].votes}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Show additional expected responses when expanded */}
-                    {expandedExpected[question.id] && question.expectedResponses.slice(1).map((expectedResponse, idx) => (
-                      <div key={idx} className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
-                        <div className="flex items-start justify-between">
-                          <p className="text-gray-700 flex-1">
-                            {expectedResponse.response}
-                          </p>
-                          <div className="flex items-center gap-1 ml-3 text-sm text-gray-600">
-                            <ThumbsUp className="w-4 h-4" />
-                            <span>{expectedResponse.votes}</span>
+                    {/* Show first expected response or no responses message */}
+                    {question.expectedResponses.length > 0 ? (
+                      <>
+                        <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                          <div className="flex items-start justify-between">
+                            <p className="text-gray-700 flex-1">
+                              {question.expectedResponses[0].response}
+                            </p>
+                            <div className="flex items-center gap-1 ml-3 text-sm text-gray-600">
+                              <ThumbsUp className="w-4 h-4" />
+                              <span>{question.expectedResponses[0].votes}</span>
+                            </div>
                           </div>
                         </div>
+                        
+                        {/* Show additional expected responses when expanded */}
+                        {expandedExpected[question.id] && question.expectedResponses.slice(1).map((expectedResponse) => (
+                          <div key={expectedResponse.id} className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                            <div className="flex items-start justify-between">
+                              <p className="text-gray-700 flex-1">
+                                {expectedResponse.response}
+                              </p>
+                              <div className="flex items-center gap-1 ml-3 text-sm text-gray-600">
+                                <ThumbsUp className="w-4 h-4" />
+                                <span>{expectedResponse.votes}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="bg-gray-50 p-3 rounded-lg border-l-4 border-gray-300">
+                        <p className="text-gray-500 italic">No expected responses yet. Be the first to add one!</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
 
@@ -446,49 +358,57 @@ const Index = () => {
                   </div>
                   
                   <div className="space-y-3">
-                    {/* Always show the first real response */}
-                    <div className={`p-3 rounded-lg border-l-4 ${getOutcomeColor(question.actualResponses[0].outcome)}`}>
-                      <div className="flex items-start gap-2 mb-2">
-                        {getOutcomeIcon(question.actualResponses[0].outcome)}
-                        <div className="flex-1">
-                          <p className="text-gray-700">"{question.actualResponses[0].response}"</p>
-                          <div className="flex items-center justify-between mt-2">
-                            {question.actualResponses[0].context && (
-                              <p className="text-sm text-gray-600 italic">
-                                Context: {question.actualResponses[0].context}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <ThumbsUp className="w-4 h-4" />
-                              <span>{question.actualResponses[0].votes || 0}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Show additional real responses when expanded */}
-                    {expandedActual[question.id] && question.actualResponses.slice(1).map((response, idx) => (
-                      <div key={idx} className={`p-3 rounded-lg border-l-4 ${getOutcomeColor(response.outcome)}`}>
-                        <div className="flex items-start gap-2 mb-2">
-                          {getOutcomeIcon(response.outcome)}
-                          <div className="flex-1">
-                            <p className="text-gray-700">"{response.response}"</p>
-                            <div className="flex items-center justify-between mt-2">
-                              {response.context && (
-                                <p className="text-sm text-gray-600 italic">
-                                  Context: {response.context}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <ThumbsUp className="w-4 h-4" />
-                                <span>{response.votes || 0}</span>
+                    {/* Show first actual response or no responses message */}
+                    {question.actualResponses.length > 0 ? (
+                      <>
+                        <div className={`p-3 rounded-lg border-l-4 ${getOutcomeColor(question.actualResponses[0].outcome)}`}>
+                          <div className="flex items-start gap-2 mb-2">
+                            {getOutcomeIcon(question.actualResponses[0].outcome)}
+                            <div className="flex-1">
+                              <p className="text-gray-700">"{question.actualResponses[0].response}"</p>
+                              <div className="flex items-center justify-between mt-2">
+                                {question.actualResponses[0].context && (
+                                  <p className="text-sm text-gray-600 italic">
+                                    Context: {question.actualResponses[0].context}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-1 text-sm text-gray-600">
+                                  <ThumbsUp className="w-4 h-4" />
+                                  <span>{question.actualResponses[0].votes}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Show additional real responses when expanded */}
+                        {expandedActual[question.id] && question.actualResponses.slice(1).map((response) => (
+                          <div key={response.id} className={`p-3 rounded-lg border-l-4 ${getOutcomeColor(response.outcome)}`}>
+                            <div className="flex items-start gap-2 mb-2">
+                              {getOutcomeIcon(response.outcome)}
+                              <div className="flex-1">
+                                <p className="text-gray-700">"{response.response}"</p>
+                                <div className="flex items-center justify-between mt-2">
+                                  {response.context && (
+                                    <p className="text-sm text-gray-600 italic">
+                                      Context: {response.context}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                                    <ThumbsUp className="w-4 h-4" />
+                                    <span>{response.votes}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="bg-gray-50 p-3 rounded-lg border-l-4 border-gray-300">
+                        <p className="text-gray-500 italic">No real responses yet. Share your experience!</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </CardContent>

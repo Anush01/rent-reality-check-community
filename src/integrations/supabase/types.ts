@@ -9,7 +9,106 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      actual_responses: {
+        Row: {
+          context: string | null
+          created_at: string
+          id: string
+          outcome: Database["public"]["Enums"]["response_outcome"]
+          question_id: string
+          response: string
+          votes: number | null
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          outcome?: Database["public"]["Enums"]["response_outcome"]
+          question_id: string
+          response: string
+          votes?: number | null
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          outcome?: Database["public"]["Enums"]["response_outcome"]
+          question_id?: string
+          response?: string
+          votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actual_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expected_responses: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          response: string
+          votes: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          response: string
+          votes?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          response?: string
+          votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expected_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          category: Database["public"]["Enums"]["question_category"]
+          created_at: string
+          id: string
+          question: string
+          tags: string[] | null
+          updated_at: string
+          votes: number | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["question_category"]
+          created_at?: string
+          id?: string
+          question: string
+          tags?: string[] | null
+          updated_at?: string
+          votes?: number | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["question_category"]
+          created_at?: string
+          id?: string
+          question?: string
+          tags?: string[] | null
+          updated_at?: string
+          votes?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +117,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      question_category: "tenant-to-landlord" | "landlord-to-tenant"
+      response_outcome: "positive" | "negative" | "neutral"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +233,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      question_category: ["tenant-to-landlord", "landlord-to-tenant"],
+      response_outcome: ["positive", "negative", "neutral"],
+    },
   },
 } as const
