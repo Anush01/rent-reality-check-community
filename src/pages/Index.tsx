@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, Users, MessageSquare, CheckCircle, AlertCircle } from "lucide-react";
 
 interface Question {
@@ -97,6 +100,24 @@ const sampleQuestions: Question[] = [
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'tenant-to-landlord' | 'landlord-to-tenant'>('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    question: "",
+    expectedResponse: "",
+    actualResponse: ""
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Form submitted:", formData);
+    // Here you would typically send the data to your backend
+    setIsDialogOpen(false);
+    setFormData({
+      question: "",
+      expectedResponse: "",
+      actualResponse: ""
+    });
+  };
 
   const filteredQuestions = sampleQuestions.filter(q => {
     const matchesSearch = q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,9 +163,63 @@ const Index = () => {
                 <p className="text-sm text-gray-600">Community-curated rental insights</p>
               </div>
             </div>
-            <Button className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
-              Contribute Question
-            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
+                  Contribute Question
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[525px]">
+                <DialogHeader>
+                  <DialogTitle>Contribute a Question</DialogTitle>
+                  <DialogDescription className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                    Please contribute a question that you thought you could have asked before renting your current flat, and what would have been a good response according to you.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="question">Question *</Label>
+                    <Textarea
+                      id="question"
+                      placeholder="What question would you have liked to ask?"
+                      value={formData.question}
+                      onChange={(e) => setFormData(prev => ({ ...prev, question: e.target.value }))}
+                      required
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expectedResponse">Expected Response *</Label>
+                    <Textarea
+                      id="expectedResponse"
+                      placeholder="What would be an ideal response to this question?"
+                      value={formData.expectedResponse}
+                      onChange={(e) => setFormData(prev => ({ ...prev, expectedResponse: e.target.value }))}
+                      required
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="actualResponse">Actual Response (Optional)</Label>
+                    <Textarea
+                      id="actualResponse"
+                      placeholder="What response did you actually receive? (if any)"
+                      value={formData.actualResponse}
+                      onChange={(e) => setFormData(prev => ({ ...prev, actualResponse: e.target.value }))}
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
+                      Submit Question
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </header>
