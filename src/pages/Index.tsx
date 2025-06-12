@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Users, MessageSquare, CheckCircle, AlertCircle, ThumbsUp, Lock } from "lucide-react";
+import { Search, Users, MessageSquare, CheckCircle, AlertCircle, ThumbsUp, Lock, Plus } from "lucide-react";
 
 interface Question {
   id: string;
@@ -21,6 +22,7 @@ interface Question {
     response: string;
     outcome: 'positive' | 'negative' | 'neutral';
     context?: string;
+    votes?: number;
   }[];
   tags: string[];
   votes: number;
@@ -49,17 +51,20 @@ const sampleQuestions: Question[] = [
       {
         response: 'I handle everything within 24-48 hours max. Here\'s my maintenance policy document.',
         outcome: 'positive',
-        context: 'Landlord provided detailed policy, followed through consistently'
+        context: 'Landlord provided detailed policy, followed through consistently',
+        votes: 34
       },
       {
         response: 'I get to it when I get to it. Don\'t be so demanding.',
         outcome: 'negative',
-        context: 'Multiple maintenance issues took weeks to resolve'
+        context: 'Multiple maintenance issues took weeks to resolve',
+        votes: 12
       },
       {
         response: 'Emergency repairs same day, others within a week usually.',
         outcome: 'neutral',
-        context: 'Generally responsive but no formal policy'
+        context: 'Generally responsive but no formal policy',
+        votes: 23
       }
     ],
     tags: ['maintenance', 'repairs', 'timeline'],
@@ -87,17 +92,20 @@ const sampleQuestions: Question[] = [
       {
         response: 'I\'m very clean and quiet. I work from home so I\'m usually around to keep an eye on things.',
         outcome: 'positive',
-        context: 'Excellent tenant, no issues in 2 years'
+        context: 'Excellent tenant, no issues in 2 years',
+        votes: 45
       },
       {
         response: 'I\'ll do whatever I want, it\'s my home while I pay rent.',
         outcome: 'negative',
-        context: 'Multiple noise complaints, property damage'
+        context: 'Multiple noise complaints, property damage',
+        votes: 8
       },
       {
         response: 'I keep things tidy and try to be considerate of neighbors.',
         outcome: 'neutral',
-        context: 'Generally good tenant with minor issues'
+        context: 'Generally good tenant with minor issues',
+        votes: 19
       }
     ],
     tags: ['property-care', 'neighbors', 'respect'],
@@ -121,12 +129,14 @@ const sampleQuestions: Question[] = [
       {
         response: 'Absolutely! Here are three references from tenants who lived here in the past two years.',
         outcome: 'positive',
-        context: 'All references were positive, landlord was transparent'
+        context: 'All references were positive, landlord was transparent',
+        votes: 56
       },
       {
         response: 'I don\'t give out personal information about my tenants.',
         outcome: 'negative',
-        context: 'Red flag - wouldn\'t provide any references'
+        context: 'Red flag - wouldn\'t provide any references',
+        votes: 15
       }
     ],
     tags: ['references', 'transparency', 'verification'],
@@ -139,6 +149,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'tenant-to-landlord' | 'landlord-to-tenant'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedExpected, setExpandedExpected] = useState<{ [key: string]: boolean }>({});
+  const [expandedActual, setExpandedActual] = useState<{ [key: string]: boolean }>({});
   const [formData, setFormData] = useState({
     question: "",
     expectedResponse: "",
@@ -159,6 +170,13 @@ const Index = () => {
 
   const toggleExpectedResponses = (questionId: string) => {
     setExpandedExpected(prev => ({
+      ...prev,
+      [questionId]: !prev[questionId]
+    }));
+  };
+
+  const toggleActualResponses = (questionId: string) => {
+    setExpandedActual(prev => ({
       ...prev,
       [questionId]: !prev[questionId]
     }));
@@ -345,16 +363,26 @@ const Index = () => {
                       <CheckCircle className="w-4 h-4" />
                       Expected Responses ({question.expectedResponses.length})
                     </h4>
-                    {question.expectedResponses.length > 1 && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => toggleExpectedResponses(question.id)}
                         className="text-xs"
                       >
-                        {expandedExpected[question.id] ? 'Show Less' : 'See All'}
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add your expected response
                       </Button>
-                    )}
+                      {question.expectedResponses.length > 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleExpectedResponses(question.id)}
+                          className="text-xs"
+                        >
+                          {expandedExpected[question.id] ? 'Show Less' : 'See All'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="space-y-3">
@@ -390,22 +418,75 @@ const Index = () => {
 
                 {/* Actual Responses */}
                 <div>
-                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                    Real Responses ({question.actualResponses.length})
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      Real Responses ({question.actualResponses.length})
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add your real response
+                      </Button>
+                      {question.actualResponses.length > 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleActualResponses(question.id)}
+                          className="text-xs"
+                        >
+                          {expandedActual[question.id] ? 'Show Less' : 'See All'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
                   <div className="space-y-3">
-                    {question.actualResponses.map((response, idx) => (
+                    {/* Always show the first real response */}
+                    <div className={`p-3 rounded-lg border-l-4 ${getOutcomeColor(question.actualResponses[0].outcome)}`}>
+                      <div className="flex items-start gap-2 mb-2">
+                        {getOutcomeIcon(question.actualResponses[0].outcome)}
+                        <div className="flex-1">
+                          <p className="text-gray-700">"{question.actualResponses[0].response}"</p>
+                          <div className="flex items-center justify-between mt-2">
+                            {question.actualResponses[0].context && (
+                              <p className="text-sm text-gray-600 italic">
+                                Context: {question.actualResponses[0].context}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <ThumbsUp className="w-4 h-4" />
+                              <span>{question.actualResponses[0].votes || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Show additional real responses when expanded */}
+                    {expandedActual[question.id] && question.actualResponses.slice(1).map((response, idx) => (
                       <div key={idx} className={`p-3 rounded-lg border-l-4 ${getOutcomeColor(response.outcome)}`}>
                         <div className="flex items-start gap-2 mb-2">
                           {getOutcomeIcon(response.outcome)}
-                          <p className="text-gray-700 flex-1">"{response.response}"</p>
+                          <div className="flex-1">
+                            <p className="text-gray-700">"{response.response}"</p>
+                            <div className="flex items-center justify-between mt-2">
+                              {response.context && (
+                                <p className="text-sm text-gray-600 italic">
+                                  Context: {response.context}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <ThumbsUp className="w-4 h-4" />
+                                <span>{response.votes || 0}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        {response.context && (
-                          <p className="text-sm text-gray-600 italic mt-2 ml-6">
-                            Context: {response.context}
-                          </p>
-                        )}
                       </div>
                     ))}
                   </div>
